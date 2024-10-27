@@ -232,13 +232,13 @@ This command will create a Docker image named naronet, containing all dependenci
 2. Prepare Your Data
 
 Make sure your dataset is prepared according to the NaroNet structure. Ensure that the files and folders are arranged as specified in the README, with DATASET_DATA_DIR structured like this:
-
+```
 DATASET_DATA_DIR/
     └── Raw_Data/
         ├── Images/
         ├── Masks/
         └── Experiment_Information/
-
+```
 Replace DATASET_DATA_DIR with your specific dataset path.
 
 3. Run the Docker Container
