@@ -224,9 +224,9 @@ We provide an example workflow via Jupyter notebook that illustrate how this pac
 1. Build the Docker Image
 
 Using the Dockerfile provided, navigate to the directory containing the Dockerfile and run:
-
+```bash
 docker build -t naronet:latest .
-
+```
 This command will create a Docker image named naronet, containing all dependencies required to run the NaroNet application, including pytorch-geometric libraries.
 
 2. Prepare Your Data
@@ -244,18 +244,18 @@ Replace DATASET_DATA_DIR with your specific dataset path.
 3. Run the Docker Container
 
 To start a Docker container with GPU support and mount your dataset directory, use the following command:
-
+```bash
 docker run --gpus all -v /path/to/DATASET_DATA_DIR:/naronet/DATASET_DATA_DIR -it naronet:latest
-
+```
 Replace /path/to/DATASET_DATA_DIR with the full path to your dataset directory.
 
 4. Run NaroNet Analysis
 
 Once inside the container, navigate to the src directory where the NaroNet main script is located and start the analysis:
-
+```bash
 cd src
 python3.9 main.py
-
+```
 Additional Notes
 
 	•	Ensure your configuration file (DatasetParameters.py) is set up with the correct paths and parameters for your dataset.
