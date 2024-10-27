@@ -211,6 +211,7 @@ DATASET_DATA_DIR/
 +			└── ...
 
 ```
+
 ## Demo
 We provide an example workflow via Jupyter notebook that illustrate how this package can be used.
 
@@ -218,6 +219,49 @@ We provide an example workflow via Jupyter notebook that illustrate how this pac
 | :-- | :-:| :-- | :-- |
 | Discover tumoral differences between patient types (POLE gene mutated vs. POLE gene non-mutated) | <img src="https://github.com/djimenezsanchez/NaroNet/blob/main/images/example_endometrial_crop.png" title="example image fluo" width="320px" align="center">  | [Endometrial cancer tissue example (download Example_POLE.zip)](https://zenodo.org/record/4630664#.YFoGLa9KiUk). |[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/djimenezsanchez/NaroNet/blob/main/examples/google_colab_example.ipynb?authuser=1) |
 
+## Running with Docker
+
+1. Build the Docker Image
+
+Using the Dockerfile provided, navigate to the directory containing the Dockerfile and run:
+
+docker build -t naronet:latest .
+
+This command will create a Docker image named naronet, containing all dependencies required to run the NaroNet application, including pytorch-geometric libraries.
+
+2. Prepare Your Data
+
+Make sure your dataset is prepared according to the NaroNet structure. Ensure that the files and folders are arranged as specified in the README, with DATASET_DATA_DIR structured like this:
+
+DATASET_DATA_DIR/
+    └── Raw_Data/
+        ├── Images/
+        ├── Masks/
+        └── Experiment_Information/
+
+Replace DATASET_DATA_DIR with your specific dataset path.
+
+3. Run the Docker Container
+
+To start a Docker container with GPU support and mount your dataset directory, use the following command:
+
+docker run --gpus all -v /path/to/DATASET_DATA_DIR:/naronet/DATASET_DATA_DIR -it naronet:latest
+
+Replace /path/to/DATASET_DATA_DIR with the full path to your dataset directory.
+
+4. Run NaroNet Analysis
+
+Once inside the container, navigate to the src directory where the NaroNet main script is located and start the analysis:
+
+cd src
+python3.9 main.py
+
+Additional Notes
+
+	•	Ensure your configuration file (DatasetParameters.py) is set up with the correct paths and parameters for your dataset.
+	•	The outputs will be saved in the DATASET_DATA_DIR directory on your local machine, which is accessible because of the volume mount.
+
+This setup will allow you to easily run and rerun NaroNet in a reproducible Docker environment with minimal additional setup. Let me know if you need any more adjustments or help!
 
 ## Citation
 Please cite this paper in case our method or parts of it were helpful in your work.
