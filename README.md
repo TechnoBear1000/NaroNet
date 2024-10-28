@@ -6,7 +6,7 @@
 © [Daniel Jiménez Sánchez] - This code is made available under the GNU GPLv3 License and is available for non-commercial academic purposes. 
 
 ## Index (the usage of this code is explained step by step) 
-[Requirements and installation](#Requirements-and-installation) • [Preparing datasets](#Preparing-datasets) • [Preparing parameter configuration](#Preparing-parameter-configuration) • [Preprocessing](#Preprocessing) • [Patch Contrastive Learning](#Patch-Contrastive-Learning) • [NaroNet](#NaroNet) • [BioInsights](#BioInsights) • [Demo](#Demo)  • [Cite](#Citation) 
+[Requirements and installation](#Requirements-and-installation) • [Preparing datasets](#Preparing-datasets) • [Preparing parameter configuration](#Preparing-parameter-configuration) • [Preprocessing](#Preprocessing) • [Patch Contrastive Learning](#Patch-Contrastive-Learning) • [NaroNet](#NaroNet) • [BioInsights](#BioInsights) • [Demo](#Demo)  • [Running with docker](#running-with-docker)  • [Cite](#Citation) 
 
 ## Requirements and installation
 * Linux (Tested on Ubuntu 18.04)
