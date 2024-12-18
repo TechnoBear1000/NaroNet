@@ -1,58 +1,59 @@
-# Dockerfile for NaroNet
+# Use the official TensorFlow 2.14.0 GPU-enabled Docker image with Python 3.10
+FROM tensorflow/tensorflow:2.14.0-gpu
 
-# Base image with CUDA support and Python 3.9
-FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+# Install necessary system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    curl \
+    gnupg \
+    ca-certificates \
+    libgl1 \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
+# Install pip for Python 3.10
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.10 get-pip.py && \
+    rm get-pip.py
 
-# Install Python 3.9, python3.9-dev, and other necessary packages
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y python3.9 python3.9-dev python3.9-distutils python3-pip python3-opencv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Upgrade pip
+RUN pip install --upgrade pip
 
-# Update alternatives to set Python 3.9 as the default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+# Install virtualenv
+RUN pip install virtualenv
 
-# Install pip for Python 3.9
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.9
+# Create and activate virtual environment
+RUN virtualenv -p python3.10 /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Create and activate NaroNet directory
-WORKDIR /naronet
+# Install PyTorch with CUDA 11.8 support
+RUN pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 \
+    -f https://download.pytorch.org/whl/torch_stable.html
 
-# Copy all required files into the container
-COPY . .
+# Install PyTorch Geometric and its dependencies automatically
+RUN pip install torch-geometric -f https://data.pyg.org/whl/torch-2.0.1+cu118.html
 
-# Install `numpy` first to avoid compatibility issues
-RUN python3.9 -m pip install --upgrade numpy
+# Copy project files
+COPY . /data/NaroNet/
 
-# Install Python dependencies, including pytorch-geometric
-RUN python3.9 -m pip install \
-    torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
-    python3.9 -m pip install \
-    torch-scatter -f https://data.pyg.org/whl/torch-1.10.0+cu113.html && \
-    python3.9 -m pip install \
-    torch-sparse -f https://data.pyg.org/whl/torch-1.10.0+cu113.html && \
-    python3.9 -m pip install \
-    torch-cluster -f https://data.pyg.org/whl/torch-1.10.0+cu113.html && \
-    python3.9 -m pip install \
-    torch-spline-conv -f https://data.pyg.org/whl/torch-1.10.0+cu113.html && \
-    python3.9 -m pip install \
-    torch-geometric && \
-    python3.9 -m pip install \
-    hyperopt \
-    xlsxwriter \
-    matplotlib \
-    seaborn \
-    imgaug \
-    tensorboard \
-    openTSNE \
-    openpyxl
+# Change ownership to non-root user (optional but recommended)
+RUN chown -R 1000:1000 /data/NaroNet
 
-# Set command to run the application (this command can be overridden if needed)
-CMD ["python3.9", "src/main.py"]
+# Set working directory
+WORKDIR /data/NaroNet/
+
+# Install project dependencies
+RUN pip install -e .  # This will install NaroNet along with its dependencies, including numpy<2.0.0
+RUN pip install imbalanced-learn==0.10.1  # Already specified in setup.py, but included here for redundancy
+
+# Downgrade protobuf if necessary
+RUN pip install protobuf==3.20.3
+
+# Expose port 8888
+EXPOSE 8888
+
+# Set default command
+CMD ["/bin/bash"]
