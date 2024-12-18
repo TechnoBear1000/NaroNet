@@ -34,6 +34,7 @@ test/data/legacy_modules.t7
 test/data/gpu_tensors.pt
 test/htmlcov
 test/.coverage
+*.pyc
 */*.pyc
 */**/*.pyc
 */**/**/*.pyc
@@ -74,3 +75,6 @@ dataset/*
 
 # Don't include any singularity images
 *.sif
+
+# WSL files
+*Zone.Identifier
