@@ -23,6 +23,8 @@ import functools
 from absl import flags
 import random
 
+from tqdm import trange
+
 import NaroNet.Patch_Contrastive_Learning.simclr.data_util as data_util
 import tensorflow.compat.v1 as tf
 import itertools
@@ -231,17 +233,40 @@ def build_input_fn_CHURRO_eval_nfile(is_training, batch_size, dataset, patch_siz
     # Create dataset using patches
     patches = np.stack(patches)
     patches = np.float32(patches)
-    patches = tf.data.Dataset.from_tensor_slices(patches)     
-    patches = patches.repeat(-1)    
+    chunk_size = 10000
+    n_chunks = int(np.ceil(len(patches)/chunk_size))
+    images_results = []
+    images_metadata = {'labels': [], 'mask': []}
+    datasets = set()
+    for i in trange(n_chunks, desc="Processing batch chunks"):
+      start = i*chunk_size
+      end = start + chunk_size
+      chunks = patches[start:end]
 
-    # Map dataset to get position, mean marker, etc...    
-    patches = patches.map(map_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    patches = patches.batch(batch_size, drop_remainder=False)
-    patches = pad_to_batch(patches,batch_size)
-    images, labels, mask = tf.data.make_one_shot_iterator(patches).get_next()
-    
-    return images, {'labels': labels, 'mask': mask, 'dataset': dataset}
-    
+      chunks = tf.data.Dataset.from_tensor_slices(chunks)     
+      chunks = chunks.repeat(-1)    
+
+      # Map dataset to get position, mean marker, etc...    
+      chunks = chunks.map(map_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+      chunks = chunks.batch(batch_size, drop_remainder=False)
+      chunks = pad_to_batch(chunks,batch_size)
+      images, labels, mask = tf.data.make_one_shot_iterator(chunks).get_next()
+      
+      #return images, {'labels': labels, 'mask': mask, 'dataset': dataset}  # Comment this out
+      images_results.append(images)
+      images_metadata['labels'].append(labels)
+      images_metadata['mask'].append(mask)
+      datasets.add(dataset)
+      
+
+  # Assemble partial results from the lists. This should probably be tensorflow 
+  # tensors since it's used by the TPUEstimator's predict method
+    images = tf.concat(images_results, axis=0)
+    images_metadata = {key: tf.concat(values, axis=0) for key, values in images_metadata.items()}
+    assert len(datasets) == 1, "There are different dataset instances for this image"
+    images_metadata['dataset'] = datasets.pop()
+    return images, images_metadata
+
   return _input_fn
 
 

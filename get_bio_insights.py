@@ -11,16 +11,16 @@ def main(path):
     possible_params = parameters(path, 'Object')
     best_params = parameters(path, 'Index')    
 
-    # Preprocess Images
-    preprocess_images(path,params['PCL_ZscoreNormalization'],params['PCL_patch_size'])
+    # # Preprocess Images
+    # preprocess_images(path,params['PCL_ZscoreNormalization'],params['PCL_patch_size'])
 
-    # Patch Contrastive Learning
-    patch_contrastive_learning(path,params)    
+    # # Patch Contrastive Learning
+    # patch_contrastive_learning(path,params)    
 
-    # Architecture Search
-    # params = architecture_search(path,params,possible_params)
+    # # Architecture Search
+    # # params = architecture_search(path,params,possible_params)
 
-    run_NaroNet(path,params)
+    # run_NaroNet(path,params)
     
     # BioInsights
     get_BioInsights(path,params)

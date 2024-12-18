@@ -1952,26 +1952,25 @@ def parameters(path, debug):
         # Patch contrastive learning parameters
         args['PCL_embedding_dimensions'] = 256
         args['PCL_batch_size']=80
-        args['PCL_epochs']=15
-        args['PCL_patch_size']=16
+        args['PCL_epochs']=1000
+        args['PCL_patch_size']=15
         args['PCL_alpha_L']=1.2 # The value of alpha_L in the manuscript
         args['PCL_ZscoreNormalization']=True        
         args['PCL_width_CNN']=2 # [1, 2, 4]           
-        args['PCL_depth_CNN']=50#4 # [1, 2, 4] 
+        args['PCL_depth_CNN']=101#4 # [1, 2, 4] 
 
         # Label you want to infer with respect the images.
-        # args['experiment_Label'] = ['POLE Mutation','Copy number variation','MSI Status','Tumour Type'] # Copy number variation, POLE Mutation, MSI Status, Tumour Type
-        args['experiment_Label'] = ['Analysis_Group'] # Copy number variation, POLE Mutation, MSI Status, Tumour Type
+        args['experiment_Label'] = ['POLE Mutation','Copy number variation','MSI Status','Tumour Type'] # Copy number variation, POLE Mutation, MSI Status, Tumour Type
 
         # Optimization Parameters
-        args['num_samples_architecture_search'] = 4
-        args['epochs'] =20# if debug else hp.quniform('epochs', 5, 25, 1)
+        args['num_samples_architecture_search'] = 2
+        args['epochs'] =10# if debug else hp.quniform('epochs', 5, 25, 1)
         args['epoch'] = 0
         args['lr_decay_factor'] = 0.5# if debug else hp.uniform('lr_decay_factor', 0, 0.75)
         args['lr_decay_step_size'] = 12# if debug else hp.quniform('lr_decay_step_size', 2, 20, 1)        
-        args['weight_decay'] = 0.001 if debug=='Index' else hp.choice('weight_decay',[1,0.1,0.01,0.001,0.0001,0.00001]) if debug=='Object' else 0.01
-        args['batch_size'] = 8 if debug=='Index' else hp.choice('batch_size', [6,12,16,20]) if debug=='Object' else 6
-        args['lr'] = 0.001 if debug=='Index' else hp.choice('lr', [0.1,0.01,0.001,0.0001]) if debug=='Object' else 0.001
+        args['weight_decay'] = 2 if debug=='Index' else hp.choice('weight_decay',[1,0.1,0.01,0.001,0.0001,0.00001]) if debug=='Object' else 0.01
+        args['batch_size'] = 0 if debug=='Index' else hp.choice('batch_size', [6,12,16,20]) if debug=='Object' else 6
+        args['lr'] = 2 if debug=='Index' else hp.choice('lr', [0.1,0.01,0.001,0.0001]) if debug=='Object' else 0.001
         args['useOptimizer'] = 'ADAM' #0 if debug else hp.choice("useOptimizer", ['ADAM', 'ADAMW', 'ADABound']) # 0:ADAM, 1:ADAMW, 2:ADABound
 
         # General
@@ -1982,8 +1981,8 @@ def parameters(path, debug):
         args['visualizeClusters'] = True
         args['learnSupvsdClust'] = True
         args['recalculate'] = False
-        args['folds'] = 10
-        args['device'] = 'cuda:0'
+        args['folds'] = 6
+        args['device'] = 'cuda:3'
         args['normalizeFeats'] = 1 if debug=='Index' else hp.choice("normalizeFeats", [True,False]) if debug=='Object' else False        
         args['normalizeCells'] = 1 if debug=='Index' else hp.choice("normalizeCells", [True,False]) if debug=='Object' else False        
         args['Batch_Normalization'] = 0 if debug=='Index' else hp.choice("Batch_Normalization", [True,False]) if debug=='Object' else True
@@ -1992,9 +1991,9 @@ def parameters(path, debug):
 
         # Neural Network
         args['hiddens'] = 1 if debug=='Index' else hp.choice('hiddens', [32,44,64,86,128]) if debug=='Object' else 44                
-        args['clusters1'] = 4 if debug=='Index' else hp.choice('clusters1',[4,7,10]) if debug=='Object' else 10        
-        args['clusters2'] = 3 if debug=='Index' else hp.choice('clusters2',[3,6,9]) if debug=='Object' else 9 
-        args['clusters3'] = 2 if debug=='Index' else hp.choice('clusters3',[2,7,8]) if debug=='Object' else 7          
+        args['clusters1'] = 2 if debug=='Index' else hp.choice('clusters1',[4,7,10]) if debug=='Object' else 10        
+        args['clusters2'] = 2 if debug=='Index' else hp.choice('clusters2',[3,6,9]) if debug=='Object' else 9 
+        args['clusters3'] = 1 if debug=='Index' else hp.choice('clusters3',[2,7,8]) if debug=='Object' else 7          
         args['LSTM'] = False#0 if debug else hp.choice("LSTM", [True,False])
         args['GLORE'] = 1 if debug=='Index' else hp.choice('GLORE',[True,False]) if debug=='Object' else False 
         args['Phenotypes'] = True  

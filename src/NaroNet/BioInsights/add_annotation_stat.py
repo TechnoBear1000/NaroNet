@@ -595,11 +595,11 @@ def add_stat_annotation(ax, plot='boxplot',
         else:
             if text_format == 'full':
                 text = "{} p = {}".format('{}', pvalue_format_string).format(result.test_short_name, result.pval)
-            elif text_format is None:
+            elif text_format == None:
                 text = None
-            elif text_format is 'star':
+            elif text_format == 'star':
                 text = pval_annotation_text(result.pval, pvalue_thresholds)
-            elif text_format is 'simple':
+            elif text_format == 'simple':
                 test_short_name = show_test_name and test_short_name or ""
                 text = simple_text(result.pval, simple_format_string, pvalue_thresholds, test_short_name)
 

@@ -98,24 +98,43 @@ def Mean_std_experiment(base_path,image_paths,Channels):
 
     return np.array(mean), np.array(std)
 
-def apply_(n_im,base_path,image_paths,Channels,mean,std,output_path,patch_size,Z_score):
-    # Load Image
-    im = loadImage(base_path+image_paths[n_im],Channels)        
-    
-    # Apply Z-score normalization
-    if len(im.shape)==3 and Z_score:
-        x,y,chan = im.shape[0],im.shape[1],im.shape[2] 
-        im = np.reshape(im,(x*y,chan))
-        im = (im-mean)/(std+1e-16)
-        im = np.reshape(im,(x,y,chan))
-    elif len(im.shape)==4 and Z_score:
-        im = (im - np.expand_dims(np.expand_dims(np.expand_dims(mean,axis=0),axis=0),axis=0))/(np.expand_dims(np.expand_dims(np.expand_dims(std,axis=0),axis=0),axis=0)+1e-16)        
+import traceback
 
-    # Save Image
-    np.save(output_path+'.'.join(image_paths[n_im].split('.')[:-1])+'.npy',im)
+def apply_(n_im, base_path, image_paths, Channels, mean, std, output_path, patch_size, Z_score):
+    try:
+        # Load Image
+        image_path = os.path.join(base_path, image_paths[n_im])
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image file not found: {image_path}")
+        im = loadImage(image_path, Channels)
+        print(f"Processing image {image_paths[n_im]} with shape {im.shape}")
+        
+        # Apply Z-score normalization
+        if len(im.shape) == 3 and Z_score:
+            im = (im - mean) / (std + 1e-16)
+        elif len(im.shape) == 4 and Z_score:
+            im = (im - np.expand_dims(np.expand_dims(np.expand_dims(mean, axis=0), axis=0), axis=0)) / \
+                 (np.expand_dims(np.expand_dims(np.expand_dims(std, axis=0), axis=0), axis=0) + 1e-16)
+        else:
+            print(f"Skipping Z-score normalization for image {image_paths[n_im]} due to unexpected shape {im.shape}")
+        
+        # Save Image with correct path
+        save_filename = '.'.join(image_paths[n_im].split('.')[:-1]) + '.npy'
+        save_path = os.path.join(output_path, save_filename)
+        np.save(save_path, im)
+        print(f"Saved normalized image to {save_path}")
+        
+        # Assign number of patches per image.
+        num_patches = (im.shape[0] // patch_size) * (im.shape[1] // patch_size)
+        print(f"Assigned {num_patches} patches for image {image_paths[n_im]}")
+        return n_im, num_patches
+    except Exception as e:
+        print(f"Error processing image {image_paths[n_im]}: {e}")
+        traceback.print_exc()
+        return n_im, 0
 
-    # Assign number of patches per image.
-    return n_im, int(im.shape[0]/patch_size)*int(im.shape[1]/patch_size)
+
+
 
 def apply_zscoreNorm(base_path,output_path,image_paths,Channels,mean,std,patch_size,z_score):        
     '''

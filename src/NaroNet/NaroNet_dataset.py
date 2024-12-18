@@ -29,6 +29,7 @@ from tqdm import tqdm
 import NaroNet.utils.utilz as utilz
 from tifffile.tifffile import imwrite
 
+
 from sklearn.manifold import TSNE
 import pandas
 import random
@@ -1101,8 +1102,10 @@ def get_BioInsights(path, parameters):
     '''
     Code to calculate and obtain all the statistics from the experiment.
     '''
+    from NaroNet.NaroNet import NaroNet
+
     # Load the model.
-    N = NaroNet.NaroNet.NaroNet(parameters, 'cpu')
+    N = NaroNet(parameters, 'cpu')
     N.epoch = 0    
     N.dataset.args = parameters
 

@@ -2,8 +2,8 @@ import os
 from ray import tune
 from ray.tune import Trainable
 from ray.tune.schedulers import ASHAScheduler
-from ray.tune.suggest.hyperopt import HyperOptSearch
-from ray.tune.suggest import ConcurrencyLimiter
+from ray.tune.search.hyperopt import HyperOptSearch
+from ray.tune.search import ConcurrencyLimiter
 from NaroNet.architecture_search.extract_info_architectureSearch import extract_best_result
 from NaroNet.architecture_search.extract_info_architectureSearch import save_architecture_search_stats
 import torch

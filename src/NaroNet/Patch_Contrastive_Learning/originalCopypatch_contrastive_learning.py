@@ -587,9 +587,9 @@ def perform_evaluation_v4(estimator, input_fn, dataset, checkpoint_path=None):
         
     # Iterate over images
     for n_file in tqdm(range(len(dataset.files)),ascii=True,desc='PCL: Infer image patches'): 
-        network_input = input_fn(False, flags.FLAGS.train_batch_size, dataset, flags.FLAGS.patch_size,n_file)
+        
         # Infer visual representation of an image
-        result = estimator.predict(network_input, checkpoint_path=checkpoint_path)
+        result = estimator.predict(input_fn(False, flags.FLAGS.train_batch_size, dataset, flags.FLAGS.patch_size,n_file), checkpoint_path=checkpoint_path)
 
         # Obtain visual representation per patch
         for first ,r in enumerate(result):
@@ -695,8 +695,7 @@ def training_or_inference(total_steps):
         plt.title('Contrast Accuracy (last value: '+str(np.round(train_contrast_acc_ws[-1]*100,2))+'%)')
         plt.legend()
         plt.savefig(flags.FLAGS.path+model_name+'/Contrast_accuracy_plot.png',dpi=600)
-        plt.close()
-        
+
         if total_steps-steps[-1]<total_steps*0.05:
             with tqdm(total=total_steps, ascii=True, desc="PCL: Train CNN (steps)") as bar_step:
                 with tqdm(total= 1000,ascii=True, desc="PCL: Contrast Accuracy (per mille)") as bar_acc:
