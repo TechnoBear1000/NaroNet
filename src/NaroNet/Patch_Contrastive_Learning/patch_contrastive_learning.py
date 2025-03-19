@@ -801,6 +801,18 @@ class progress_bar(threading.Thread):
     def run(self): 
         # target function of the thread class 
         try:             
+            model_name = [l for l in os.listdir(flags.FLAGS.path) if 'Model_Training' in l][0]
+            chekpointfiles = [l for l in os.listdir(flags.FLAGS.path+model_name) if ('events' in l) and ('.v2' in l)]
+            # Check if the process has already started
+            if len(chekpointfiles)>0:
+                checkpoint_file = sorted(chekpointfiles, key=lambda t: -os.stat(flags.FLAGS.path+model_name+'/'+t).st_mtime)[0]
+                summary_path = flags.FLAGS.path+model_name+'/'+checkpoint_file
+                steps, train_contrast_acc = self.extract_train_contrast_acc(summary_path)
+                last_step = steps[-1]
+                train_contrast_acc_last = np.mean(train_contrast_acc[int(np.floor(train_contrast_acc.shape[0]*.9)):])
+            else:
+                last_step = 0
+                train_contrast_acc_last = 0
             the_process_already_started=False
             while not the_process_already_started and (not self.stopped()):
                 # Load the existing model checkpoints.
