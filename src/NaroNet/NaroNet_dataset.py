@@ -476,7 +476,15 @@ class NaroNet_dataset(torch.utils.data.Dataset):
                         data.num_classes = []
                         for i_l in range(len(patient_label)):
                             p_l = [i[i_l] for i in [i[2] for i in IndexAndClass]]
-                            p_l_aux = sorted(list(set(p_l)))
+                            filtered_labels = []
+                            for label in p_l:
+                                try:
+                                    if np.isnan(label):
+                                        label = "None"
+                                except:
+                                    pass
+                                filtered_labels.append(label)
+                            p_l_aux = sorted(list(set(filtered_labels)))
                             if 'None' in p_l_aux:
                                 p_l_aux.remove('None')
                             data.name_labels.append(p_l_aux)
