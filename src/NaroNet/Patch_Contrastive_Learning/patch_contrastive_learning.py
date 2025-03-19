@@ -697,7 +697,15 @@ def training_or_inference(total_steps):
         plt.savefig(flags.FLAGS.path+model_name+'/Contrast_accuracy_plot.png',dpi=600)
         plt.close()
         
-        if total_steps-steps[-1]<total_steps*0.05:
+        # The below is the original termination condition. It's flawed because at 
+        # few steps it wont be triggered, never signaling that the training is complete.
+        # if total_steps-steps[-1]<total_steps*0.05:
+        
+        # This code instead looks at the whether the difference between the last step and the 
+        # total steps is less than the difference between the last two steps (i.e. the next 
+        # step, if it was taken, would be beyond the total_steps and therefore we are done )
+        current_step_diff = total_steps - steps[-1]
+        if current_step_diff < n_step_between_vals:
             with tqdm(total=total_steps, ascii=True, desc="PCL: Train CNN (steps)") as bar_step:
                 with tqdm(total= 1000,ascii=True, desc="PCL: Contrast Accuracy (per mille)") as bar_acc:
                     bar_step.update(steps[-2])
