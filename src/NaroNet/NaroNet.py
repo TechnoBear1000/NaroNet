@@ -68,6 +68,11 @@ class NaroNet:
         for i_c in self.IndexAndClass_reorder:
             l_now = []
             for i_l, l in enumerate(i_c[2]):
+                try:
+                    if np.isnan(l):
+                        l = "None"
+                except TypeError:
+                    pass
                 if l !='None':
                     l_now.append(self.name_labels[i_l].index(l))
                 else:
