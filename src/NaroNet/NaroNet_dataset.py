@@ -406,12 +406,12 @@ class NaroNet_dataset(torch.utils.data.Dataset):
 
                 # Obtain Labels from excel
                 patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
-                if '.' in str(patient_to_image_excel['Image_Names'][0]):
-                    patient_to_image_excel['Image_Names'] = ['.'.join(i.split('.')[:-1]) for i in patient_to_image_excel['Image_Names']]
-                patient_to_image_excel['Image_Names'] = [str(i) for i in patient_to_image_excel['Image_Names']]
+                if '.' in str(patient_to_image_excel['Subject_Names'][0]):
+                    patient_to_image_excel['Subject_Names'] = ['.'.join(i.split('.')[:-1]) for i in patient_to_image_excel['Subject_Names']]
+                patient_to_image_excel['Subject_Names'] = [str(i) for i in patient_to_image_excel['Subject_Names']]
                 # Find the actual patient
-                if '.'.join(files[file_index].split('.')[:-1]) in list(patient_to_image_excel['Image_Names']):
-                    patient_index = list(patient_to_image_excel['Image_Names']).index('.'.join(files[file_index].split('.')[:-1]))                
+                if '.'.join(files[file_index].split('.')[:-2]) in list(patient_to_image_excel['Subject_Names']):
+                    patient_index = list(patient_to_image_excel['Subject_Names']).index('.'.join(files[file_index].split('.')[:-2]))                
                 else:
                     continue
 

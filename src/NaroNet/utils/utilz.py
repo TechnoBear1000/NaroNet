@@ -720,7 +720,7 @@ def showAndSaveEndOfTraining(self):
         patient_to_image_excel = pd.read_excel(self.dataset.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
         # In case there is a column named 'Subject_Names' we have to classify subject-wise patients
         if any([p=='Subject_Names' for p in patient_to_image_excel.columns]):
-            lst_excl = ['.'.join(pat.split('.')[:-1]) for pat in patient_to_image_excel['Image_Names']]
+            lst_excl = [pat for pat in patient_to_image_excel['Subject_Names']]
             image_ind = [lst_excl.index(self.IndexAndClass[ind][0]) for ind in np.concatenate(self.dict_fold['test_subject_indices'])]
             subjects = [patient_to_image_excel['Subject_Names'][ii] for ii in image_ind]
             
