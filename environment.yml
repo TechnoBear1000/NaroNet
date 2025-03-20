@@ -1,0 +1,44 @@
+name: naronet-test
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - pyg # Pytorch Geometric
+dependencies:
+#  - argparse>=1.1  # Why was this installed as a separate package? Since Python 3.2, it's maintained as a built in package
+  - cudatoolkit=11.8
+  - geojson
+  - hyperopt>=0.2.3
+  - imbalanced-learn
+  - imgaug>=0.4.0
+  - imagecodecs
+  - matplotlib>=3.2.1
+  - numpy>=1.18.2
+  - pandas>=1.1.5
+  - pillow
+  - pip
+  - python=3.9
+  - pycox>=0.2.0
+  - scikit-image
+  - scikit-learn
+  - seaborn>=0.11
+  - sklearn-pandas>=2.0.3
+  - scipy>=1.5.4
+  - tensorboard>=1.14
+  - tensorflow>=1.14,<2.10  # The code uses old tensorflow, so it's best we explicitly set it to a version which works
+  - pytorch>=1.4
+  - torchvision
+  - pyg
+  - pytorch-scatter
+  - pytorch-cluster
+  - lightning
+  - tifffile
+  - torchtuples>=0.2.0
+  - tqdm>=4.50.2
+  - xlsxwriter>=1.1.5
+  - xlrd>=1.2.0
+  - openpyxl
+  - openslide
+  - openslide-python  
+  - pip:
+    - ray[tune]
