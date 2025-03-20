@@ -7,6 +7,7 @@ import cv2
 from matplotlib import cm
 from scipy import stats
 import seaborn as sns
+from tqdm import tqdm
 from NaroNet.utils.parallel_process import parallel_process
 from tifffile.tifffile import imwrite
 import pandas as pd
@@ -168,8 +169,11 @@ def select_patches_from_cohort(dataset,IndexAndClass,clusters):
             dict_subjects.append({'clusters':clusters,'dataset':dataset,'subject_info':subject_info,'count':count,'CropConfPheno':CropConfPheno,'CropConfTissueComm':CropConfTissueComm})
     
     # select_patches_from_cohort
-    result = parallel_process(dict_subjects,select_patches_from_cohort_,use_kwargs=True,front_num=0,desc='BioInsights: Get relevant examples of cell types') 
-
+    #result = parallel_process(dict_subjects, select_patches_from_cohort_,use_kwargs=True,front_num=0,desc='BioInsights: Get relevant examples of cell types') 
+    result = []
+    for kwargs in tqdm(dict_subjects, desc='BioInsights: Get relevant examples of cell types'):
+        select_patches_from_cohort_(**kwargs)
+    
     # Get lists of patches
     for R in result:  
         for r_i, r in enumerate(R[0]):
