@@ -290,18 +290,21 @@ def extract_rois(wsi_path, output_dir):
     with tifffile.TiffFile(wsi_path) as tif:
     # `bounding_boxes` contains (min_row, min_col, max_row, max_col) tuples
         wsi = tif.asarray(out='memmap')
+        wsi_name, _, wsi_ext = wsi_path.name.partition('.')
+            
         for bbox in tqdm(bounding_boxes, desc="Extracting ROIs"):
             min_row, min_col, max_row, max_col = bbox
-            image_region = wsi[min_row:max_row, min_col:max_col]
             coords_string = f'({min_row},{min_col}),({max_row}, {max_col})'
-            wsi_name, _, wsi_ext = wsi_path.name.partition('.')
             image_region_name = f'{wsi_name}[{coords_string}].{wsi_ext}'
-            # Do stuff with the metadata
             output_path = output_dir / image_region_name
-            # tifffile seems to assume channel is first, let's transpose 
-            # it and see if it does what we want
-            image_region = image_region.transpose((2,0,1))
-            tifffile.imwrite(output_path, image_region, metadata={'axes': 'CYX'})
+            
+            if not output_path.exists():
+                image_region = wsi[min_row:max_row, min_col:max_col]
+                # Do stuff with the metadata
+                # tifffile seems to assume channel is first, let's transpose 
+                # it and see if it does what we want
+                image_region = image_region.transpose((2,0,1))
+                tifffile.imwrite(output_path, image_region, metadata={'axes': 'CYX'})
             region_images.append(output_path)
     return region_images
             
@@ -317,20 +320,26 @@ def get_image_metadata(metadata_path):
     return image_names_to_columns
 
 
-def preprocess_wsis(wsi_root_path: Path, output_dir: Path, image_types=['tif', 'tiff', 'npy']):
+def preprocess_wsis(path: str, image_types=['tif', 'tiff', 'npy']):
+    path = Path(path)
+    # Paths                            
+    base_path = path / 'Raw_Data/'
+    wsi_root_path = base_path / 'WSI'
+    
+    
     wsi_image_dir = wsi_root_path / 'Images'
     wsi_metadata_path = wsi_root_path / 'Experiment_Information'/ 'Image_Labels.xlsx'
     wsi_image_names_to_columns = get_image_metadata(wsi_metadata_path)
     
-    region_output_dir = output_dir / 'Images'
+    region_output_dir = base_path / 'Images'
     region_output_dir.mkdir(exist_ok=True, parents=True)
-    experiment_info_output_dir = output_dir / 'Experiment_Information'
+    experiment_info_output_dir = base_path / 'Experiment_Information'
     experiment_info_output_dir.mkdir(exist_ok=True, parents=True)
     output_metadata = experiment_info_output_dir / 'Image_Labels.xlsx'
-    if output_metadata.exists():
-        output_image_names_to_columns = get_image_metadata(output_metadata)
-    else:
-        output_image_names_to_columns = dict()
+    #if output_metadata.exists():
+    #    output_image_names_to_columns = get_image_metadata(output_metadata)
+    #else:
+    output_image_names_to_columns = dict()
             
     wsi_paths = set()
     for image_type in image_types:
@@ -341,15 +350,15 @@ def preprocess_wsis(wsi_root_path: Path, output_dir: Path, image_types=['tif', '
     for wsi_path in tqdm(wsi_paths, desc="Processing WSI"):
         wsi_name = wsi_path.name
         image_metadata = wsi_image_names_to_columns[wsi_name]
-        image_metadata['Base_Image'] = wsi_name
         image_metadata['Subject_Names'] = wsi_name
+        output_image_names_to_columns[wsi_name] = image_metadata
+        
         roi_paths = extract_rois(wsi_path, region_output_dir)
+        
         for roi_path in roi_paths:
             roi_name = roi_path.name
             image_to_patient_records.append({'Image_Name': roi_name, 'Subject_Name': wsi_name})
             # Don't overwrite existing information (in case manually edited)
-            if roi_name not in output_image_names_to_columns:
-                output_image_names_to_columns[roi_name] = image_metadata
     
     output_records = []
     
@@ -357,9 +366,9 @@ def preprocess_wsis(wsi_root_path: Path, output_dir: Path, image_types=['tif', '
         output_record = {'Image_Names': name}
         output_record.update(columns)
         output_records.append(output_record)
+    
     updated_output_metadata = pd.DataFrame.from_records(output_records)
     updated_output_metadata.to_excel(output_metadata, index=False)
-    
     
     image_to_patient_output = experiment_info_output_dir / 'Patient_to_Image.xlsx'
     image_to_subject_df = pd.DataFrame.from_records(image_to_patient_records)
@@ -378,14 +387,7 @@ def preprocess_images(path,ZScoreNormalization,patch_size, image_types=['tif', '
     Images_Names_Ends_In: (string) that specifies the image type    
     patch_size: (int) that specifies the size of the patch
     '''
-    path = Path(path)
-    # Paths                            
-    base_path = path / 'Raw_Data/'
-    images_path = base_path / 'Images'
-    wsi_root_path = base_path / 'WSI'
-    
-    preprocess_wsis(wsi_root_path, base_path, image_types)
-    
+   
     pcl_path = path / 'Patch_Contrastive_Learning'
     output_path = pcl_path / 'Preprocessed_Images/'
     
