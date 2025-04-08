@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 def load_table(path):
-    return pd.read_excel(path)
+    return pd.read_excel(path, engine='openpyxl')
 
 def meanerror_predictions_and_labels(image_names,predictions,labels,risk_group):
     meanerror = []

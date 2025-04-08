@@ -315,13 +315,16 @@ def load_patches_for_step(is_training, batch_size, dataset, patch_size,n_images_
     indices = list(range(len(dataset.files)))
     rand.shuffle(indices)    
     dataset.files = [dataset.files[r] for r in indices]
-    dataset.num_patches_inImage = [dataset.num_patches_inImage[dataset.files[r]] for r in indices]    
+    # This is the old code and seems wrong. num_patches_inImage is a dictionary with image names to number of patches, 
+    # here it's redefined as just the number of patches. This breaks things (e.g. dataset.files defined above).
+    # I can't find code which doesn't seem to assume this is a dictionary
+    # dataset.num_patches_inImage = [dataset.num_patches_inImage[dataset.files[r]] for r in indices]    
 
     # Get dataset
-    data = np.stack([dataset.get_patches_from_image(indx) for indx in range(min(dataset.n_images,n_images_iteration))])    
+    data = np.stack([dataset.get_patches_from_image(indx) for indx in range(min(dataset.n_images,n_images_iteration))])
     data = np.reshape(data,(data.shape[0]*data.shape[1],data.shape[2],data.shape[3],data.shape[4]))
     data = np.float32(data)
-    data = tf.data.Dataset.from_tensor_slices(data)     
+    data = tf.data.Dataset.from_tensor_slices(data)
     data = data.repeat(-1)
     data = data.map(map_fn)
     data = data.batch(batch_size, drop_remainder=True)

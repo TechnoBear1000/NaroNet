@@ -310,7 +310,7 @@ def extract_rois(wsi_path, output_dir):
             
         
 def get_image_metadata(metadata_path):    
-    metadata = pd.read_excel(metadata_path)
+    metadata = pd.read_excel(metadata_path, engine='openpyxl')
     
     image_names_to_columns = dict()
     for row in metadata.to_dict('records'):
@@ -387,7 +387,9 @@ def preprocess_images(path,ZScoreNormalization,patch_size, image_types=['tif', '
     Images_Names_Ends_In: (string) that specifies the image type    
     patch_size: (int) that specifies the size of the patch
     '''
-   
+    path = Path(path)
+    base_path = path / "Raw_Data"
+    images_path =  base_path / 'Images'
     pcl_path = path / 'Patch_Contrastive_Learning'
     output_path = pcl_path / 'Preprocessed_Images/'
     
@@ -405,7 +407,7 @@ def preprocess_images(path,ZScoreNormalization,patch_size, image_types=['tif', '
     preprocessed_paths = sorted(output_path.glob('*.npy'))
     z_score = True # Apply z-score normalization or not
 
-    Channels, Marker_Names = utilz.load_channels(base_path)
+    Channels, Marker_Names = utilz.load_channels(str(base_path))
     
     
     # to_preprocess = set([image_path.with_suffix('').name for image_path in image_paths])

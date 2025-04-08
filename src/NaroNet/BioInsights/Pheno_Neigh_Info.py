@@ -138,7 +138,7 @@ def select_patches_from_cohort_(clusters,dataset,subject_info,count,CropConfPhen
                                                                     dataset,cell_type_idx,subject_info,subgraph_idx,
                                                                     n_cell_types,prev_cell_type_assignment)                
             # Load image of patches
-            Patch_im,Markers = load_patch_image(dataset,subject_info,im,imList)                    
+            Patch_im, Markers = load_patch_image(dataset,subject_info,im,imList)                    
             # Open Single-Cell Contrastive Learning Information
             PCL_reprsntions = np.load(dataset.raw_dir+'/{}.npy'.format(subject_info[0]))                     
             # Select Patches of a specific Phenotype and save its confidence
@@ -171,9 +171,14 @@ def select_patches_from_cohort(dataset,IndexAndClass,clusters):
     # select_patches_from_cohort
     #result = parallel_process(dict_subjects, select_patches_from_cohort_,use_kwargs=True,front_num=0,desc='BioInsights: Get relevant examples of cell types') 
     result = []
+    # This loop replaces the parallel_process above for debugging purposes. An important semantic is that the parallel process would have 
+    # implicitly made copies of the arguments, while calling it in sequence will mutate the same
+    # data structures at each call. We'll solve this by making a deepcopy of the kwargs before each call
     for kwargs in tqdm(dict_subjects, desc='BioInsights: Get relevant examples of cell types'):
-        select_patches_from_cohort_(**kwargs)
-    
+        kwargs = copy.deepcopy(kwargs)
+        r = select_patches_from_cohort_(**kwargs)
+        result.append(r)
+        
     # Get lists of patches
     for R in result:  
         for r_i, r in enumerate(R[0]):
@@ -291,7 +296,9 @@ def extract_topk_patches_from_cohort(dataset, CropConf, Marker_Names,cell_type):
     heatmapMarkerExpression = np.zeros((7,len(CropConf),len(Marker_Names))) #Number of TMEs x number of markers
     heatmap_Colocalization = np.zeros((len(CropConf),int(len(Marker_Names)*(len(Marker_Names)-1)/2))) # Number of TMEs x Number of Marker combinations
 
-    # Mean marker expression and std marker expression
+    # Mean marker expression and std marker expression. The CropConf 
+    # object is a list corresponding the the amount of clusters
+    # Each object is in turn a list of triplets
     AllCELLLS = np.concatenate([np.stack([c[0].mean((0,1)) for c in CC]) for CC in CropConf if len(CC)>0])
 
     # Use CropCOnf, that saves a lot of patches...

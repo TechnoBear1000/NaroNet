@@ -88,7 +88,7 @@ class NaroNet:
         '''
 
         # Load excel 
-        patient_to_image_excel = pd.read_excel(self.dataset.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
+        patient_to_image_excel = pd.read_excel(self.dataset.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx', engine='openpyxl')  
 
         # In case there is a column named 'Subject_Names' we have to classify subject-wise patients
         if any([p=='Subject_Names' for p in patient_to_image_excel.columns]):
@@ -102,7 +102,7 @@ class NaroNet:
                 ordered_names = [iac[0] for iac in self.IndexAndClass_reorder]
                 splitter = []
                 for leave_subject in range(len(subject_level_labels)):                    
-                    test_names = [p_name for p_name in patient_to_image_excel['Subject_Names'][subjects[leave_subject].index]]
+                    test_names = [p_name for p_name in patient_to_image_excel['Image_Names'][subjects[leave_subject].index]]
                     test_indices = [ordered_names.index(t) for t in test_names]
                     train_indices = [iac for iac in range(len(self.IndexAndClass)) if not iac in test_indices]
                     splitter.append((train_indices,test_indices))                    

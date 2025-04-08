@@ -570,7 +570,7 @@ def perform_evaluation_v4(estimator, input_fn, dataset, checkpoint_path=None):
     # In case there are more than one image per patient.
     patient_to_image = [i for i in os.listdir(dataset.path[:-47]+'Raw_Data/Experiment_Information/') if 'Patient_to_Image.xlsx'==i]
     if len(patient_to_image)>0:
-        patient_to_image_excel = pd.read_excel(dataset.path[:-47]+'Raw_Data/Experiment_Information/'+patient_to_image[0])
+        patient_to_image_excel = pd.read_excel(dataset.path[:-47]+'Raw_Data/Experiment_Information/'+patient_to_image[0], engine='openpyxl')
         OrderedListOfFiles = []
         
         # Obtain list of image names and order them. This is done to make mosaics with the same order.
