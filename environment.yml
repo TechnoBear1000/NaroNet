@@ -12,16 +12,16 @@ dependencies:
   - imbalanced-learn
   - imgaug>=0.4.0
   - imagecodecs
-  - matplotlib>=3.2.1
+  - matplotlib=3.3
   - numpy>=1.18.2
-  - pandas>=1.1.5
+  - pandas=1.1.5
   - pillow
   - pip
   - python=3.9
   - pycox>=0.2.0
   - scikit-image
   - scikit-learn
-  - seaborn>=0.11
+  - seaborn=0.11
   - sklearn-pandas>=2.0.3
   - scipy>=1.5.4
   - tensorboard>=1.14
