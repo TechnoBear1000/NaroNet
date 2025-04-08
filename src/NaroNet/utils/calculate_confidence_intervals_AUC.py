@@ -27,7 +27,7 @@ confidence_interval_accuracy(accuracy=0.9673,n_samples=336,Experiment_Name='POLE
 import pandas as pd
 import numpy as np
 process_dir = '/gpu-data/djsanchez/Images-ZuriBaselRisk_v4/NaroNet/Risk_3_classes_OSmonth/Cross_validation_results/'
-Image_preds = pd.read_excel(process_dir+'Prediction_values_Risk_3_classes_Fold10.xlsx')
+Image_preds = pd.read_excel(process_dir+'Prediction_values_Risk_3_classes_Fold10.xlsx', engine='openpyxl')
 subject_preds = []
 subject_labels = []
 for S_N in np.unique(Image_preds['Subject_name']):

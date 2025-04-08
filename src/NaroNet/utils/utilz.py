@@ -1,5 +1,9 @@
+from collections import defaultdict
 import xlsxwriter
 import pickle as pkl
+from pathlib import Path
+import os.path
+
 from NaroNet.utils.plot_confusion_matrix import plot_confusion_matrix_from_data
 from sklearn import metrics
 from sklearn import datasets, linear_model
@@ -22,7 +26,8 @@ import pandas as pd
 
 def load_channels(base_path):
     # User-defined channels to use
-    with open(base_path+'Experiment_Information/Channels.txt','r') as f:
+    base_path = Path(base_path)
+    with open(base_path / 'Experiment_Information' /'Channels.txt','r') as f:
         Channels = f.read().split('\n')
     
     Channels = [m for n,m in enumerate(Channels) if m!='']
@@ -673,128 +678,168 @@ def confidence_interval_AUC(y_true, y_pred):
    
     return confidence_lower,confidence_upper
 
-def showAndSaveEndOfTraining(self):                
+def showAndSaveEndOfTraining(naronet):                
     # Reinitialize
     plt.clf()
     
     # Save epoch information into a log file.
-    eval_info = {'train_accuracy_mean': np.mean(self.dict_fold['acc_train']),'train_accuracy_std': np.std(self.dict_fold['acc_train']), 
-    'validation_accuracy_mean': np.mean(self.dict_fold['acc_validation']),'validation_accuracy_std': np.std(self.dict_fold['acc_validation']),
-    'test_accuracy_mean': np.mean(self.dict_fold['acc_test']),'tests_accuracy_std': np.std(self.dict_fold['acc_test'])}
-    fn = self.dataset.processed_dir_cross_validation+"folds_information.txt"                        
+    eval_info = {'train_accuracy_mean': np.mean(naronet.dict_fold['acc_train']),'train_accuracy_std': np.std(naronet.dict_fold['acc_train']), 
+    'validation_accuracy_mean': np.mean(naronet.dict_fold['acc_validation']),'validation_accuracy_std': np.std(naronet.dict_fold['acc_validation']),
+    'test_accuracy_mean': np.mean(naronet.dict_fold['acc_test']),'tests_accuracy_std': np.std(naronet.dict_fold['acc_test'])}
+    fn = naronet.dataset.processed_dir_cross_validation+"folds_information.txt"                        
     with open(fn, "a") as myfile:
         myfile.write(str(eval_info)+"\n")        
     # print(eval_info)
 
     # Save test info in excel
-    for label_i in range(len(self.dict_fold['PredictedValues'])):
+    for label_i in range(len(naronet.dict_fold['PredictedValues'])):
         table_prediction = {'Subject_name':[],'Prediction':[],'Label':[]}
-        for i_s, subject in enumerate(np.concatenate(self.dict_fold['test_subject_indices'])):
-            table_prediction['Subject_name'].append(self.IndexAndClass[subject][0])            
-            table_prediction['Prediction'].append(self.dict_fold['PredictedValues'][label_i][i_s,:])
-            table_prediction['Label'].append(self.dict_fold['GroundTruthValues'][:,label_i][i_s])
+        for i_s, subject in enumerate(np.concatenate(naronet.dict_fold['test_subject_indices'])):
+            table_prediction['Subject_name'].append(naronet.IndexAndClass[subject][0])            
+            table_prediction['Prediction'].append(naronet.dict_fold['PredictedValues'][label_i][i_s,:])
+            table_prediction['Label'].append(naronet.dict_fold['GroundTruthValues'][:,label_i][i_s])
         table_prediction = pd.DataFrame.from_dict(table_prediction)
-        table_prediction.to_excel(self.dataset.processed_dir_cross_validation+"/Prediction_values_"+str(self.args['experiment_Label'][label_i])+'_Fold'+str(self.fold)+".xlsx")    
+        table_prediction.to_excel(naronet.dataset.processed_dir_cross_validation+"/Prediction_values_"+str(naronet.args['experiment_Label'][label_i])+'_Fold'+str(naronet.fold)+".xlsx")    
 
-    for i in range(len(self.dict_fold['PredictedValues'])):               
+    for i in range(len(naronet.dict_fold['PredictedValues'])):               
         
-        if len(set([iac[2][i] for iac in self.IndexAndClass]))<6:        
+        if len(set([iac[2][i] for iac in naronet.IndexAndClass]))<6:        
             # AUC-ROC curves
-            thresholds,fpr,tpr = auc_roc_curve(self.name_labels[i],self.dict_fold['GroundTruthValues'][:,i],
-            self.dict_fold['PredictedValues'][i],self.dataset.processed_dir_cross_validation,self.args['experiment_Label'][i],'record_wise')
+            thresholds,fpr,tpr = auc_roc_curve(naronet.name_labels[i],naronet.dict_fold['GroundTruthValues'][:,i],
+            naronet.dict_fold['PredictedValues'][i],naronet.dataset.processed_dir_cross_validation,naronet.args['experiment_Label'][i],'record_wise')
             
             # Recall-Precision curve
-            recall_precision_curve(self.name_labels[i],self.dict_fold['GroundTruthValues'][:,i],
-            self.dict_fold['PredictedValues'][i],self.dataset.processed_dir_cross_validation,self.args['experiment_Label'][i],'record_wise')
+            recall_precision_curve(naronet.name_labels[i],naronet.dict_fold['GroundTruthValues'][:,i],
+            naronet.dict_fold['PredictedValues'][i],naronet.dataset.processed_dir_cross_validation,naronet.args['experiment_Label'][i],'record_wise')
             
             # Confusion matrix        
-            confusion_matrix(self.name_labels[i],self.dict_fold['GroundTruthValues'][:,i],self.dict_fold['PredictedValues'][i],
-            self.dataset.processed_dir_cross_validation,thresholds,fpr,tpr,self.args['experiment_Label'][i],'record_wise')
+            confusion_matrix(naronet.name_labels[i],naronet.dict_fold['GroundTruthValues'][:,i],naronet.dict_fold['PredictedValues'][i],
+            naronet.dataset.processed_dir_cross_validation,thresholds,fpr,tpr,naronet.args['experiment_Label'][i],'record_wise')
             
         else:  
             # Obtain correlation of predicted values to the ground-truth
-            Correlation_to_GT(self.dict_fold['PredictedValues'][i].argmax(1),self.dict_fold['GroundTruthValues'][:,i],
-            self.dataset.processed_dir_cross_validation,'record_wise')        
+            Correlation_to_GT(naronet.dict_fold['PredictedValues'][i].argmax(1),naronet.dict_fold['GroundTruthValues'][:,i],
+            naronet.dataset.processed_dir_cross_validation,'record_wise')        
 
         # Subject wise analysis
-        patient_to_image_excel = pd.read_excel(self.dataset.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
+        patient_to_image_excel = pd.read_excel(naronet.dataset.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx', engine='openpyxl')  
         # In case there is a column named 'Subject_Names' we have to classify subject-wise patients
         if any([p=='Subject_Names' for p in patient_to_image_excel.columns]):
-            lst_excl = ['.'.join(pat.split('.')[:-1]) for pat in patient_to_image_excel['Image_Names']]
-            image_ind = [lst_excl.index(self.IndexAndClass[ind][0]) for ind in np.concatenate(self.dict_fold['test_subject_indices'])]
-            subjects = [patient_to_image_excel['Subject_Names'][ii] for ii in image_ind]
+            # We start by building an index of the images and the subjects in the metdata file 
+            # since the indices in the IndexAndClass list is from the randomized dataset split.
+            # The goal is to find which images from IndexAndClass are what subjects by cross 
+            # referencing the metadata file.
+            image_prefixes_to_index_and_subject = dict()
+            for i, pat in enumerate(patient_to_image_excel['Image_Names']):
+                # Split off the extension of the  image name
+                image_prefix, ext = os.path.splitext(os.path.basename(pat))
+                subject_name = patient_to_image_excel['Subject_Names'][i]
+                image_prefixes_to_index_and_subject[image_prefix] = (i, subject_name)
+                
+            # The indices here refer to the randomized order of the images, 
+            # and not the order they are in the metadata file. 
+            # We look them up in the dict we created above. This seems to be a bit brittle with regards 
+            # to what the images are referred to by different parts of the code (i.e. with or without extension)
+            randomized_test_subject_indices = np.concatenate(naronet.dict_fold['test_subject_indices'])
+            image_ind = []
+            subjects = []
+            subjects_grouped_images = defaultdict(list)
+            for test_fold_index, randomized_test_index in enumerate(randomized_test_subject_indices):
+                test_image_name = naronet.IndexAndClass[randomized_test_index][0]
+                test_image_prefix, ext = os.path.splitext(test_image_name)
+                test_image_index, test_image_subject = image_prefixes_to_index_and_subject[test_image_prefix]
+                image_ind.append(test_image_index)
+                subjects.append(test_image_subject)
+                subjects_grouped_images[subject].append((test_image_prefix, test_fold_index))
             
             Pred_values = []
             GT_values = []
-            for subj in set(subjects):
-                subj_images_ind = [ii for ii in image_ind if patient_to_image_excel['Subject_Names'][ii]==subj]
-                subj_images_names = [lst_excl[i] for i in subj_images_ind]
-                subj_images_ind_test = [[i[0] for i in self.IndexAndClass].index(sii) for sii in subj_images_names]
-                test_ind = [list(np.concatenate(self.dict_fold['test_subject_indices'])).index(siit) for siit in subj_images_ind_test]
-                Pred_values.append(np.mean(self.dict_fold['PredictedValues'][i][test_ind,:],axis=0))
-                GT_values.append(np.mean(self.dict_fold['GroundTruthValues'][test_ind,i],axis=0))
+            # We now group images based on subject
+            for subject, subject_images in subjects_grouped_images.items():
+                test_ind = [test_fold_index for test_image_prefix, test_fold_index in subject_images]
+                # What value should i have here, the old code seemed weird, 
+                # where it was set to the last index of naronet.IndexAndClass 
+                # by a separate loop
+                i = -1
+                Pred_values.append(np.mean(naronet.dict_fold['PredictedValues'][i][test_ind,:],axis=0))
+                GT_values.append(np.mean(naronet.dict_fold['GroundTruthValues'][test_ind,i],axis=0))
+            
+            # for subj in set(subjects):
+            #     # This is the index in the metadatada files
+            #     subj_images_ind = [ii for ii in image_ind if patient_to_image_excel['Subject_Names'][ii]==subj]
+            #     # That index is used to lookup the image prefix
+            #     subj_images_names = [image_prefixes[i] for i in subj_images_ind]
+            #     # The image prefix is used to lookup the
+            #     subj_images_ind_test = [[i[0] for i in naronet.IndexAndClass].index(sii) for sii in subj_images_names]
+            #     test_ind = [list(np.concatenate(naronet.dict_fold['test_subject_indices'])).index(siit) for siit in subj_images_ind_test]
+            #     # What should i be in this case. It will have the value of the 
+            #     # last indexed thing when creating subj_images_ind_test, but 
+            #     # that seems suspicous
+            #     Pred_values.append(np.mean(naronet.dict_fold['PredictedValues'][i][test_ind,:],axis=0))
+            #     GT_values.append(np.mean(naronet.dict_fold['GroundTruthValues'][test_ind,i],axis=0))
 
-            if len(set([iac[2][i] for iac in self.IndexAndClass]))<6: 
+
+            if len(set([iac[2][i] for iac in naronet.IndexAndClass]))<6: 
                 # AUC-ROC curves
-                thresholds,fpr,tpr = auc_roc_curve(self.name_labels[i],np.stack(GT_values),
-                np.stack(Pred_values),self.dataset.processed_dir_cross_validation,self.args['experiment_Label'][i],'subject_wise')
+                thresholds,fpr,tpr = auc_roc_curve(naronet.name_labels[i],np.stack(GT_values),
+                np.stack(Pred_values),naronet.dataset.processed_dir_cross_validation,naronet.args['experiment_Label'][i],'subject_wise')
                 # Recall-Precision curve
-                recall_precision_curve(self.name_labels[i],np.stack(GT_values),
-                np.stack(Pred_values),self.dataset.processed_dir_cross_validation,self.args['experiment_Label'][i],'subject_wise')
+                recall_precision_curve(naronet.name_labels[i],np.stack(GT_values),
+                np.stack(Pred_values),naronet.dataset.processed_dir_cross_validation,naronet.args['experiment_Label'][i],'subject_wise')
                 # Confusion matrix        
-                confusion_matrix(self.name_labels[i],np.stack(GT_values),np.stack(Pred_values),
-                self.dataset.processed_dir_cross_validation,thresholds,fpr,tpr,self.args['experiment_Label'][i],'subject_wise')
+                confusion_matrix(naronet.name_labels[i],np.stack(GT_values),np.stack(Pred_values),
+                naronet.dataset.processed_dir_cross_validation,thresholds,fpr,tpr,naronet.args['experiment_Label'][i],'subject_wise')
             else:
                 # Obtain correlation of predicted values to the ground-truth
                 Correlation_to_GT(np.stack(Pred_values).argmax(1),np.stack(GT_values),
-                self.dataset.processed_dir_cross_validation,'subject_wise')        
+                naronet.dataset.processed_dir_cross_validation,'subject_wise')        
 
     # Save Training/Validation Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_loss'],val_info=self.dict_fold['val_loss'], title='Training/Validation Loss Test:'+str(round(np.mean(self.dict_fold['loss_test']),4))+'±'+str(round(np.std(self.dict_fold['loss_test']),4)), label=['Training Loss', 'Validation Loss'], ylabel='Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_Loss.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_loss'],val_info=naronet.dict_fold['val_loss'], title='Training/Validation Loss Test:'+str(round(np.mean(naronet.dict_fold['loss_test']),4))+'±'+str(round(np.std(naronet.dict_fold['loss_test']),4)), label=['Training Loss', 'Validation Loss'], ylabel='Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_Loss.png",dpi=900)
     h.close()
     # Save Training/Validation Accuracy
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_acc'],val_info=self.dict_fold['val_acc'], title='Training/Validation Loss Test:'+str(round(np.mean(self.dict_fold['acc_test']),4))+'±'+str(round(np.std(self.dict_fold['acc_test']),4)), label=['Training Accuracy', 'Validation Accuracy'], ylabel='Accuracy')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_ACC.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_acc'],val_info=naronet.dict_fold['val_acc'], title='Training/Validation Loss Test:'+str(round(np.mean(naronet.dict_fold['acc_test']),4))+'±'+str(round(np.std(naronet.dict_fold['acc_test']),4)), label=['Training Accuracy', 'Validation Accuracy'], ylabel='Accuracy')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_ACC.png",dpi=900)
     h.close()
     # Save Training/Validation Orthogonal Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_ortho_loss'],val_info=self.dict_fold['val_ortho_loss'], title='Training/Validation Orthogonal Loss', label=['Training Orthogonal Loss', 'Validation Orthogonal Loss'], ylabel='Orthogonal Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoLoss.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_ortho_loss'],val_info=naronet.dict_fold['val_ortho_loss'], title='Training/Validation Orthogonal Loss', label=['Training Orthogonal Loss', 'Validation Orthogonal Loss'], ylabel='Orthogonal Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoLoss.png",dpi=900)
     h.close()
     # Save Training/Validation Patient Entropy Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_Pat_ent'],val_info=self.dict_fold['val_Pat_ent'], title='Training/Validation patient entropy loss', label=['Training patient entropy loss', 'Validation patient entropy loss'], ylabel='Patient entropy loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_PatientEntropyLoss.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_Pat_ent'],val_info=naronet.dict_fold['val_Pat_ent'], title='Training/Validation patient entropy loss', label=['Training patient entropy loss', 'Validation patient entropy loss'], ylabel='Patient entropy loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_PatientEntropyLoss.png",dpi=900)
     h.close()
     # Save Training/Validation Cell Entropy Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_Cell_ent'],val_info=self.dict_fold['val_Cell_ent'], title='Training/Validation cell entropy loss', label=['Training cell entropy loss', 'Validation cell entropy loss'], ylabel='Cell entropy loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_CellEntropyLoss.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_Cell_ent'],val_info=naronet.dict_fold['val_Cell_ent'], title='Training/Validation cell entropy loss', label=['Training cell entropy loss', 'Validation cell entropy loss'], ylabel='Cell entropy loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_CellEntropyLoss.png",dpi=900)
     h.close()
     # Save Training/Validation OrthogonalColor Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_ortho_color_loss'],val_info=self.dict_fold['val_ortho_color_loss'], title=['Training/Validation OrthogonalColor Loss'], label=['Training OrthogonalColor Loss', 'Validation OrthogonalColor Loss'], ylabel='OrthogonalColor Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoColorLoss.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_ortho_color_loss'],val_info=naronet.dict_fold['val_ortho_color_loss'], title=['Training/Validation OrthogonalColor Loss'], label=['Training OrthogonalColor Loss', 'Validation OrthogonalColor Loss'], ylabel='OrthogonalColor Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoColorLoss.png",dpi=900)
     h.close()
     # Save Training/Validation Orthogonal_induc Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_ortho_loss_induc'],val_info=self.dict_fold['val_ortho_loss_induc'], title=['Training/Validation OrthogonalInduc Loss'], label=['Training OrthogonalInduc Loss', 'Validation OrthogonalInduc Loss'], ylabel='OrthogonalInduc Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoLossInduc.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_ortho_loss_induc'],val_info=naronet.dict_fold['val_ortho_loss_induc'], title=['Training/Validation OrthogonalInduc Loss'], label=['Training OrthogonalInduc Loss', 'Validation OrthogonalInduc Loss'], ylabel='OrthogonalInduc Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoLossInduc.png",dpi=900)
     h.close()
     # Save Training/Validation OrthogonalColor_induc Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_ortho_color_loss_induc'],val_info=self.dict_fold['val_ortho_color_loss_induc'], title=['Training/Validation OrthogonalColorInduc Loss'], label=['Training OrthogonalColorInduc Loss', 'Validation OrthogonalColorInduc Loss'], ylabel='OrthogonalColorInduc Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoColorLossInduc.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_ortho_color_loss_induc'],val_info=naronet.dict_fold['val_ortho_color_loss_induc'], title=['Training/Validation OrthogonalColorInduc Loss'], label=['Training OrthogonalColorInduc Loss', 'Validation OrthogonalColorInduc Loss'], ylabel='OrthogonalColorInduc Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_OrthoColorLossInduc.png",dpi=900)
     h.close()
     # Save Training/Validation PearsonSUP Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_PearsonSUP'],val_info=self.dict_fold['val_PearsonSUP'], title=['Training/Validation PearsonSUP Loss'], label=['Training PearsonSUP Loss', 'Validation PearsonSUP Loss'], ylabel='PearsonSUP Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_PearsonSUP.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_PearsonSUP'],val_info=naronet.dict_fold['val_PearsonSUP'], title=['Training/Validation PearsonSUP Loss'], label=['Training PearsonSUP Loss', 'Validation PearsonSUP Loss'], ylabel='PearsonSUP Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_PearsonSUP.png",dpi=900)
     h.close()
     # Save Training/Validation PearsonUNSUP Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_PearsonUNSUP'],val_info=self.dict_fold['val_PearsonUNSUP'], title=['Training/Validation PearsonUNSUP Loss'], label=['Training PearsonUNSUP Loss', 'Validation PearsonUNSUP Loss'], ylabel='PearsonUNSUP Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_PearsonUNSUP.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_PearsonUNSUP'],val_info=naronet.dict_fold['val_PearsonUNSUP'], title=['Training/Validation PearsonUNSUP Loss'], label=['Training PearsonUNSUP Loss', 'Validation PearsonUNSUP Loss'], ylabel='PearsonUNSUP Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_PearsonUNSUP.png",dpi=900)
     h.close()
     # Save Training/Validation nearestNeighbor Loss
-    h = plot_training_loss_acc(train_info=self.dict_fold['train_NearestNeighbor_loss'],val_info=self.dict_fold['val_NearestNeighbor_loss'], title=['Training/Validation PearsonUNSUP Loss'], label=['Training NearestNeighbor Loss', 'Validation NearestNeighbor Loss'], ylabel='NearestNeighbor Loss')
-    h.savefig(self.dataset.processed_dir_cross_validation+"/TrainingValidation_NearestNeighbor.png",dpi=900)
+    h = plot_training_loss_acc(train_info=naronet.dict_fold['train_NearestNeighbor_loss'],val_info=naronet.dict_fold['val_NearestNeighbor_loss'], title=['Training/Validation PearsonUNSUP Loss'], label=['Training NearestNeighbor Loss', 'Validation NearestNeighbor Loss'], ylabel='NearestNeighbor Loss')
+    h.savefig(naronet.dataset.processed_dir_cross_validation+"/TrainingValidation_NearestNeighbor.png",dpi=900)
     h.close()
 
-    return self.dict_fold
+    return naronet.dict_fold
 
 def checkIfDebugging(args):
     args['epochs'] = args['epochs'] if np.isscalar(args['epochs']) else np.asscalar(args['epochs'])

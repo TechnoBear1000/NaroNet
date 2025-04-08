@@ -389,36 +389,54 @@ class NaroNet_dataset(torch.utils.data.Dataset):
         if len(os.listdir(self.raw_dir))==len(os.listdir(self.processed_dir_graphs)):            
             return
 
+        # Obtain Labels from excel
+        patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx', engine='openpyxl')  
+        image_to_records = dict()
+        for record in patient_to_image_excel.to_dict('records'):
+            image_name = record['Image_Names']
+            image_prefix, ext = os.path.splitext(image_name)
+            image_to_records[image_prefix] = record
+                
         for root, dirs, files in os.walk(self.raw_dir):
             files.sort()
-            for file_index in tqdm(range(len(files)),ascii=True,desc='NaroNet: generating enriched graphs'):
-                fullpath = (osp.join(self.raw_dir,files[file_index]))                                
-                    
+            for file_index, filename in enumerate(tqdm(files,ascii=True,desc='NaroNet: generating enriched graphs')):
+                fullpath = (osp.join(self.raw_dir, filename))                              
+                
+                patch_base_name, ext = os.path.splitext(filename)
                 # Handle Superpatches npy files
-                if '.npy' in fullpath:
+                if ext == '.npy':
                     file = np.load(fullpath,allow_pickle=True)
                 else:
+                    print(f"Found file {fullpath}, which could not be loaded as a numpy file")
                     continue
-                    
+                
+                # The first two columns of the array contains the graph information
+                
                 # Obtain edge List
                 maxValues = file[:,[0,1]].max(-2)+1
                 minValues = file[:,[0,1]].min(-2)-1
 
-                # Obtain Labels from excel
-                patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
-                if '.' in str(patient_to_image_excel['Image_Names'][0]):
-                    patient_to_image_excel['Image_Names'] = ['.'.join(i.split('.')[:-1]) for i in patient_to_image_excel['Image_Names']]
-                patient_to_image_excel['Image_Names'] = [str(i) for i in patient_to_image_excel['Image_Names']]
+                # This code seem to make an assumption that if the image name contains a dot, it's not a subject name. 
+                # This doesn't work if we derive the patient name from the file name of the original image which regions have been cropped from
+                # if '.' in str(patient_to_image_excel['Image_Names'][0]):
+                #     patient_to_image_excel['Image_Names'] = ['.'.join(i.split('.')[:-1]) for i in patient_to_image_excel['Image_Names']]
+                #patient_to_image_excel['Image_Names'] = [str(i) for i in patient_to_image_excel['Image_Names']]
+                
                 # Find the actual patient
-                if '.'.join(files[file_index].split('.')[:-1]) in list(patient_to_image_excel['Image_Names']):
-                    patient_index = list(patient_to_image_excel['Image_Names']).index('.'.join(files[file_index].split('.')[:-1]))                
-                else:
-                    continue
+                # This is old, brittle code which makes assumptions about the file names.
+                # if '.'.join(files[file_index].split('.')[:-2]) in list(patient_to_image_excel['Image_Names']):
+                #     patient_index = list(patient_to_image_excel['Image_Names']).index('.'.join(files[file_index].split('.')[:-2]))                
+                # else:
+                #     continue
+                
+                
 
                 # Select the respective patient's label
+                image_record = image_to_records[patch_base_name]
                 patient_label = []
                 for l in self.experiment_label:
-                    patient_label.append(patient_to_image_excel[l][patient_index])                
+                    image_label = image_record[l]
+                    patient_label.append(image_label)                
                 
                 # Definition of grid size to extract patches. The graph could be separated into different subgraphs. Deactivated for now.
                 ImageSize = 100000
@@ -445,14 +463,14 @@ class NaroNet_dataset(torch.utils.data.Dataset):
                         edge_index = torch.unique_consecutive(edge_index,dim=1)
 
                         #  Mean node degree
-                        print('Mean Node Degree:'+str(edge_index.shape[1]/sum(Truexy==True))+' '+files[file_index])
+                        print('Mean Node Degree:'+str(edge_index.shape[1]/sum(Truexy==True))+' '+filename)
                                                     
                         # Assign node attributes and label.
                         x = torch.from_numpy(file[np.squeeze(Truexy),:][:,2:])                                                
                         y = patient_label
                        
                         # Obtain data format for pytorch-geometric.
-                        data = Data(edge_index=edge_index, x=x, y=y, name=files[file_index])
+                        data = Data(edge_index=edge_index, x=x, y=y, name=filename)
 
 
                         # Obtain the number of maximum nodes, so far.
@@ -662,7 +680,7 @@ class NaroNet_dataset(torch.utils.data.Dataset):
         # Open Original Image
         if 'Endometrial_LowGrade' in self.root: # and osp.isfile(self.root+'Raw_Data/Experiment_Information/Image_Labels.xlsx')  
             # Obtain Labels from excel
-            patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Patient_to_Image.xlsx')  
+            patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Patient_to_Image.xlsx', engine='openpyxl')  
 
             # Find the actual patient
             image_indices = patient_to_image_excel['Image_Name'][patient_to_image_excel['Subject_Name'].isin([idxclster[0]])]            
@@ -724,7 +742,7 @@ class NaroNet_dataset(torch.utils.data.Dataset):
             im = im[:,:,Channels]  
         elif 'ZuriBasel' in self.root:
             # Take 39 Channels
-            patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Patient_to_Image.xlsx')     
+            patient_to_image_excel = pd.read_excel(self.root+'Raw_Data/Experiment_Information/Patient_to_Image.xlsx', engine='openpyxl')     
             # Find the actual patient
             image_indices = patient_to_image_excel['Image_Name'][patient_to_image_excel['Subject_Name'].isin([idxclster[0]])]                  
             # Iterate through images corresponding to this patient
@@ -761,12 +779,16 @@ class NaroNet_dataset(torch.utils.data.Dataset):
                 im[:iml.shape[0],max_col:max_col+iml.shape[1],:] = iml      
         else:
             # Load Image in its own format.
-            if os.listdir(self.root+'Raw_Data/Images/')[-1].split('.')[-1]=='tiff':
-                image = tifffile.imread(self.root+'Raw_Data/Images/'+idxclster[0]+'.tiff')                 
-            elif os.listdir(self.root+'Raw_Data/Images/')[-1].split('.')[-1]=='tif':
-                image = tifffile.imread(self.root+'Raw_Data/Images/'+idxclster[0]+'.tif') 
-            elif os.listdir(self.root+'Raw_Data/Images/')[-1].split('.')[-1]=='npy':
-                image = np.load(self.root+'Raw_Data/Images/'+idxclster[0]+'.npy')
+            image_dir = self.root+'Raw_Data/Images/'
+            images = os.listdir(image_dir)
+            last_image = images[-1]
+            prefix, ext = os.path.splitext(last_image)
+            raw_image_path = image_dir + idxclster[0] + ext
+            
+            if ext == '.tif' or ext == '.tiff':
+                image = tifffile.imread(raw_image_path)                 
+            elif ext == '.npy':
+                image = np.load(raw_image_path)
             if len(image.shape)==3:
                 # The 3rd dimension should be the channel dimension
                 if np.argmin(image.shape)==0:
