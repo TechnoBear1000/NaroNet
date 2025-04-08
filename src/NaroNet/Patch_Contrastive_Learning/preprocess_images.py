@@ -342,9 +342,9 @@ def preprocess_wsis(path: str, image_types=['tif', 'tiff', 'npy']):
     output_image_names_to_columns = dict()
             
     wsi_paths = set()
-    for image_type in image_types:
-        wsis_of_type = wsi_image_dir.glob(f'*.{image_type}')
-        wsi_paths.update(wsis_of_type)
+    for image_name in wsi_image_names_to_columns.keys():
+        wsi_path = wsi_image_dir / image_name
+        wsi_paths.add(wsi_path)
     
     image_to_patient_records = []
     for wsi_path in tqdm(wsi_paths, desc="Processing WSI"):
